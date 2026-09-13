@@ -3,7 +3,7 @@
 
 ## Descripción
 
-Mercado VIVA es un MVP desarrollado para mejorar y agilizar el proceso de devolución de productos.
+Nuestro  MVP desarrollado se utilizara  para mejorar y agilizar el proceso de devolución de productos.
 
 El sistema permite que un cliente registre una solicitud de devolución y que un empleado pueda consultar, verificar y procesar dicha solicitud.
 
