@@ -20,7 +20,7 @@ function render(){const filter=$('#search').value.toLowerCase(),rows=requests.fi
     <option value="Devolución en efectivo" ${r.resolution==='Devolución en efectivo'?'selected':''}>💵 Devolución en efectivo</option>
     <option value="Cambio por la misma unidad" ${r.resolution==='Cambio por la misma unidad'?'selected':''}>🔄 Cambio por la misma unidad</option>
   </select>
-</td></tr>`
+</td></tr>`}).join('');$('#empty-state').hidden=rows.length>0}
 async function loadPurchases(){purchases=await api('/api/purchases',{headers:{Authorization:`Bearer ${customerToken}`}});$('#recent-products').innerHTML=purchases.map(p=>`<option value="${p.product}">${p.product} — ${p.order_number}</option>`).join('');$('#purchases-help').textContent='Compras recientes disponibles: selecciona un producto para completar su orden automáticamente.'}
 document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',()=>{if(button.dataset.view==='employee'&&!employeeToken){openLogin('employee');return}document.querySelectorAll('[data-view],.view').forEach(el=>el.classList.remove('active'));button.classList.add('active');$('#'+button.dataset.view).classList.add('active');if(button.dataset.view==='employee')loadRequests()}));
 $('#customer-login').addEventListener('click',()=>openLogin('customer'));$('#close-login').addEventListener('click',()=>$('#login-dialog').close());
