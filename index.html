@@ -44,7 +44,7 @@
               <label>Número de orden<input id="order" required placeholder="Ej. MV-104582" /></label>
               <label>Correo electrónico<input id="email" type="email" required placeholder="nombre@correo.com" /></label>
               <label>Producto a devolver<input id="product" required list="recent-products" placeholder="Ej. Audífonos inalámbricos" /><datalist id="recent-products"></datalist><small id="purchases-help">Puedes ingresar los datos de tu compra manualmente.</small></label>
-              <label>Categoría del producto<select id="category" required><option value="">Selecciona una categoría</option><option value="Tecnología">Tecnología</option><option value="Alimento perecedero">Alimento perecedero</option><option value="Otra">Otra categoría</option></select></label>
+              <label>Categoría del producto<select id="category" required><option value="">Selecciona una categoría</option><option value="technology">Tecnología</option><option value="perishable-food">Alimento perecedero</option><option value="other">Otra categoría</option></select></label>
               <label class="wide">Motivo de la devolución<select id="reason" required><option value="">Selecciona un motivo</option><option>Producto defectuoso</option><option>Recibí un producto equivocado</option><option>No cumple mis expectativas</option><option>Otro</option></select></label>
               <label id="other-reason-wrap" class="wide" hidden>Cuéntanos el otro motivo<textarea id="other-reason" placeholder="Describe el motivo de tu devolución" maxlength="500"></textarea></label>
               <label class="wide">Fotos del producto <span class="optional">(opcional, máximo 3)</span><input id="photos" type="file" accept="image/*" multiple /></label>

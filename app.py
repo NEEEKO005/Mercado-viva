@@ -14,7 +14,7 @@ from urllib.parse import urlparse
 BASE_DIR = Path(__file__).resolve().parent
 DATABASE = BASE_DIR / "mercado_viva.db"
 UPLOADS = BASE_DIR / "uploads"
-ALLOWED_CATEGORY = "Tecnología"
+ALLOWED_CATEGORY = "technology"
 STATUSES = {"Pendiente", "Aprobada", "Rechazada", "Procesada"}
 SESSIONS = {}
 
@@ -27,18 +27,27 @@ def initialize_database():
     with connection() as db:
         db.executescript("""
         CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name TEXT NOT NULL, email TEXT UNIQUE NOT NULL, password_hash TEXT NOT NULL, role TEXT NOT NULL);
+        CREATE TABLE IF NOT EXISTS employees (id INTEGER PRIMARY KEY, name TEXT NOT NULL, email TEXT UNIQUE NOT NULL, password_hash TEXT NOT NULL, position TEXT NOT NULL, active INTEGER NOT NULL DEFAULT 1);
         CREATE TABLE IF NOT EXISTS purchases (id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL, order_number TEXT NOT NULL, product TEXT NOT NULL, category TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS return_requests (id INTEGER PRIMARY KEY AUTOINCREMENT, code TEXT UNIQUE NOT NULL, order_number TEXT NOT NULL, email TEXT NOT NULL, product TEXT NOT NULL, category TEXT NOT NULL, reason TEXT NOT NULL, other_reason TEXT, photos TEXT DEFAULT '[]', status TEXT NOT NULL DEFAULT 'Pendiente', created_at TEXT NOT NULL);
         """)
         columns={row[1] for row in db.execute("PRAGMA table_info(return_requests)")}
         if "other_reason" not in columns: db.execute("ALTER TABLE return_requests ADD COLUMN other_reason TEXT")
         if "photos" not in columns: db.execute("ALTER TABLE return_requests ADD COLUMN photos TEXT DEFAULT '[]'")
+        # Migra de forma segura los empleados que existían en la tabla antigua users.
+        legacy_employees=db.execute("SELECT id,name,email,password_hash FROM users WHERE role='employee'").fetchall()
+        for employee in legacy_employees:
+            db.execute("""INSERT OR IGNORE INTO employees (id,name,email,password_hash,position,active)
+                          VALUES (?,?,?,?,?,1)""",(employee["id"],employee["name"],employee["email"],employee["password_hash"],"Gestor de devoluciones"))
+        db.execute("DELETE FROM users WHERE role='employee'")
         if db.execute("SELECT COUNT(*) FROM users").fetchone()[0] == 0:
             db.executemany("INSERT INTO users (id,name,email,password_hash,role) VALUES (?,?,?,?,?)", [
-              (1,"Camila Gómez","camila@email.com",password("Cliente2026!"),"customer"),
-              (2,"Operador Mercado Viva","empleado@mercadoviva.com",password("Empleado2026!"),"employee")])
+              (1,"Camila Gómez","camila@email.com",password("Cliente2026!"),"customer")])
             db.executemany("INSERT INTO purchases (user_id,order_number,product,category) VALUES (?,?,?,?)", [
               (1,"MV-100842","Audífonos inalámbricos","Tecnología"),(1,"MV-100890","Teclado mecánico","Tecnología"),(1,"MV-100811","Cargador portátil","Tecnología")])
+        if db.execute("SELECT COUNT(*) FROM employees").fetchone()[0] == 0:
+            db.execute("""INSERT INTO employees (name,email,password_hash,position,active)
+                          VALUES (?,?,?,?,1)""",("Operador Mercado Viva","empleado@mercadoviva.com",password("Empleado2026!"),"Gestor de devoluciones"))
 
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self,*args,**kwargs): super().__init__(*args,directory=str(BASE_DIR),**kwargs)
@@ -84,9 +93,11 @@ class Handler(SimpleHTTPRequestHandler):
         path=urlparse(self.path).path
         if path=="/api/login":
             data=self.read_json() or {}; role=data.get("role"); email=data.get("username","").strip().lower()
-            with connection() as db:user=db.execute("SELECT * FROM users WHERE email=? AND role=? AND password_hash=?",(email,role,password(data.get("password","")))).fetchone()
+            table="employees" if role=="employee" else "users"
+            query="SELECT * FROM employees WHERE email=? AND password_hash=? AND active=1" if role=="employee" else "SELECT * FROM users WHERE email=? AND role='customer' AND password_hash=?"
+            with connection() as db:user=db.execute(query,(email,password(data.get("password","")))).fetchone()
             if not user:return self.send_json({"error":"Credenciales inválidas."},HTTPStatus.UNAUTHORIZED)
-            token=secrets.token_urlsafe(32); SESSIONS[token]={"id":user["id"],"name":user["name"],"email":user["email"],"role":user["role"]}
+            token=secrets.token_urlsafe(32); SESSIONS[token]={"id":user["id"],"name":user["name"],"email":user["email"],"role":role}
             return self.send_json({"token":token,"name":user["name"],"email":user["email"],"role":role})
         if path!="/api/returns":return self.send_error(HTTPStatus.NOT_FOUND)
         # El inicio de sesión del cliente es opcional: solo agiliza la selección de compras.
@@ -99,6 +110,7 @@ class Handler(SimpleHTTPRequestHandler):
         if not all((order,email,product,category,reason)):return self.send_json({"error":"Completa todos los campos obligatorios."},HTTPStatus.BAD_REQUEST)
         if user and email.lower()!=user["email"].lower():return self.send_json({"error":"El correo no corresponde a tu sesión."},HTTPStatus.FORBIDDEN)
         if category!=ALLOWED_CATEGORY:return self.send_json({"error":"Solo se aceptan devoluciones de productos tecnológicos."},HTTPStatus.UNPROCESSABLE_ENTITY)
+        category="Tecnología"
         other=get("other_reason")
         if reason=="Otro" and not other:return self.send_json({"error":"Describe el otro motivo de devolución."},HTTPStatus.BAD_REQUEST)
         photos=[]
