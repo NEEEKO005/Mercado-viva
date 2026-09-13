@@ -34,6 +34,7 @@ def initialize_database():
         columns={row[1] for row in db.execute("PRAGMA table_info(return_requests)")}
         if "other_reason" not in columns: db.execute("ALTER TABLE return_requests ADD COLUMN other_reason TEXT")
         if "photos" not in columns: db.execute("ALTER TABLE return_requests ADD COLUMN photos TEXT DEFAULT '[]'")
+        if "resolution" not in columns: db.execute("ALTER TABLE return_requests ADD COLUMN resolution TEXT")
         # Migra de forma segura los empleados que existían en la tabla antigua users.
         legacy_employees=db.execute("SELECT id,name,email,password_hash FROM users WHERE role='employee'").fetchall()
         for employee in legacy_employees:
