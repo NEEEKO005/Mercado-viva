@@ -127,9 +127,15 @@ class Handler(SimpleHTTPRequestHandler):
         parts=urlparse(self.path).path.strip("/").split("/")
         if len(parts)!=3 or parts[:2]!=["api","returns"] or not parts[2].isdigit():return self.send_error(HTTPStatus.NOT_FOUND)
         if not self.current_user("employee"):return self.send_json({"error":"Acceso exclusivo para empleados."},HTTPStatus.UNAUTHORIZED)
-        data=self.read_json() or {};status=data.get("status")
+        data=self.read_json() or {}
+        status=data.get("status")
+        resolution=data.get("resolution")
         if status not in STATUSES:return self.send_json({"error":"Estado inválido."},HTTPStatus.BAD_REQUEST)
-        with connection() as db:db.execute("UPDATE return_requests SET status=? WHERE id=?",(status,int(parts[2])));row=db.execute("SELECT * FROM return_requests WHERE id=?",(int(parts[2]),)).fetchone()
+        if resolution not in {"Devolución en efectivo","Cambio por la misma unidad"}:
+            return self.send_json({"error":"Selecciona una opción de devolución o cambio."},HTTPStatus.BAD_REQUEST)
+        with connection() as db:
+            db.execute("UPDATE return_requests SET status=?, resolution=? WHERE id=?",(status,resolution,int(parts[2])))
+            row=db.execute("SELECT * FROM return_requests WHERE id=?",(int(parts[2]),)).fetchone()
         return self.send_json(dict(row)) if row else self.send_json({"error":"Solicitud no encontrada."},HTTPStatus.NOT_FOUND)
 
 if __name__=="__main__":
