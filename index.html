@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mercado Viva | Devoluciones</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#inicio"><span class="brand-mark">m</span> mercado <b>viva</b></a>
+      <nav aria-label="Navegación principal">
+        <button class="nav-link active" data-view="customer">Solicitar devolución</button>
+        <button class="nav-link" data-view="employee">Portal trabajador</button>
+      </nav>
+      <div class="help">¿Necesitas ayuda? <strong>Centro de ayuda</strong></div>
+    </header>
+
+    <main>
+      <section class="hero" id="inicio">
+        <div>
+          <p class="eyebrow">DEVOLUCIONES MÁS SIMPLES</p>
+          <h1>Tu compra merece<br /><em>una segunda oportunidad.</em></h1>
+          <p class="hero-copy">Gestiona la devolución de artículos tecnológicos en pocos pasos, de forma clara y segura.</p>
+        </div>
+        <div class="hero-orb" aria-hidden="true"><span>↻</span></div>
+      </section>
+
+      <section id="customer" class="view active">
+        <div class="section-heading">
+          <div><p class="eyebrow">CLIENTES</p><h2>Solicita una devolución</h2><p>Completa la información de tu compra para iniciar el proceso.</p></div>
+          <div class="steps" aria-label="Pasos del proceso"><span class="current">1</span><i></i><span>2</span><i></i><span>3</span></div>
+        </div>
+        <div class="customer-grid">
+          <form id="return-form" class="card form-card">
+            <div class="form-title"><span class="icon-badge">↗</span><div><h3>Datos de la solicitud</h3><p>Todos los campos son obligatorios.</p></div></div>
+            <div class="form-grid">
+              <label>Número de orden<input id="order" required placeholder="Ej. MV-104582" /></label>
+              <label>Correo electrónico<input id="email" type="email" required placeholder="nombre@correo.com" /></label>
+              <label>Producto a devolver<input id="product" required placeholder="Ej. Audífonos inalámbricos" /></label>
+              <label>Categoría del producto<select id="category" required><option value="">Selecciona una categoría</option><option value="Tecnología">Tecnología</option><option value="Alimento perecedero">Alimento perecedero</option><option value="Otra">Otra categoría</option></select></label>
+              <label class="wide">Motivo de la devolución<select id="reason" required><option value="">Selecciona un motivo</option><option>Producto defectuoso</option><option>Recibí un producto equivocado</option><option>No cumple mis expectativas</option><option>Otro</option></select></label>
+            </div>
+            <div id="policy-message" class="policy-note">Solo aceptamos devoluciones de artículos tecnológicos. Los alimentos perecederos no son elegibles.</div>
+            <button class="primary" type="submit">Continuar con mi solicitud <span>→</span></button>
+          </form>
+          <aside class="info-card">
+            <p class="eyebrow">ANTES DE EMPEZAR</p><h3>Lo que necesitas tener a la mano</h3>
+            <ul><li><span>✓</span> Número de orden de compra</li><li><span>✓</span> Correo usado en la compra</li><li><span>✓</span> Producto y motivo de devolución</li></ul>
+            <div class="notice"><b>Importante</b><p>Por política de calidad e inocuidad, no recibimos devoluciones de alimentos perecederos.</p></div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="employee" class="view">
+        <div class="section-heading employee-title"><div><p class="eyebrow">EQUIPO MERCADO VIVA</p><h2>Gestión de devoluciones</h2><p>Consulta, verifica y actualiza las solicitudes de los clientes.</p></div><button id="seed-data" class="secondary">Actualizar solicitudes</button></div>
+        <div class="metrics"><article><span>Solicitudes</span><strong id="total-count">0</strong></article><article><span>Pendientes de revisión</span><strong id="pending-count">0</strong></article><article><span>Procesadas</span><strong id="processed-count">0</strong></article></div>
+        <div class="card table-card"><div class="table-top"><div><h3>Bandeja de solicitudes</h3><p>Actualiza la decisión y el estado de cada devolución.</p></div><input id="search" placeholder="Buscar orden o producto" /></div><div class="table-wrap"><table><thead><tr><th>Solicitud</th><th>Producto</th><th>Cliente</th><th>Motivo</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="requests-body"></tbody></table></div><p id="empty-state" class="empty">Aún no hay solicitudes registradas.</p></div>
+      </section>
+    </main>
+    <div id="toast" role="status" aria-live="polite"></div>
+    <script src="app.js"></script>
+  </body>
+</html>
