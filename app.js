@@ -1,35 +1,15 @@
-let requests = [];
+let requests = [], customerToken = '', employeeToken = '', loginRole = 'customer', purchases = [];
 const $ = s => document.querySelector(s);
-function toast(message){ const t=$('#toast'); t.textContent=message; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000); }
-async function loadRequests(){
-  try { const response = await fetch('/api/returns'); requests = await response.json(); render(); }
-  catch { toast('No fue posible conectar con el servidor. Ejecuta python app.py'); }
-}
-function render(){
-  const filter=$('#search').value.toLowerCase();
-  const rows=requests.filter(r=>(r.order_number+r.product+r.email+r.code).toLowerCase().includes(filter));
-  $('#total-count').textContent=requests.length;
-  $('#pending-count').textContent=requests.filter(r=>r.status==='Pendiente').length;
-  $('#processed-count').textContent=requests.filter(r=>r.status==='Procesada').length;
-  $('#requests-body').innerHTML=rows.map(r=>`<tr><td><b class="request-id">${r.code}</b>${r.order_number}</td><td><b>${r.product}</b><small>${r.category}</small></td><td>${r.email}</td><td>${r.reason}</td><td><span class="status ${r.status}">${r.status}</span></td><td><select class="action-select" data-id="${r.id}"><option ${r.status==='Pendiente'?'selected':''}>Pendiente</option><option ${r.status==='Aprobada'?'selected':''}>Aprobada</option><option ${r.status==='Rechazada'?'selected':''}>Rechazada</option><option ${r.status==='Procesada'?'selected':''}>Procesada</option></select></td></tr>`).join('');
-  $('#empty-state').hidden=rows.length>0;
-}
-document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',()=>{
-  document.querySelectorAll('[data-view],.view').forEach(el=>el.classList.remove('active'));
-  button.classList.add('active'); $('#'+button.dataset.view).classList.add('active');
-  if(button.dataset.view==='employee') loadRequests();
-}));
-$('#category').addEventListener('change',e=>{
-  const prohibited=e.target.value==='Alimento perecedero';
-  $('#policy-message').classList.toggle('invalid',prohibited);
-  $('#policy-message').textContent=prohibited?'Este producto no puede devolverse: los alimentos perecederos están excluidos por política de calidad.':'Solo aceptamos devoluciones de artículos tecnológicos. Los alimentos perecederos no son elegibles.';
-});
-$('#return-form').addEventListener('submit',async e=>{
-  e.preventDefault(); const category=$('#category').value;
-  if(category!=='Tecnología'){ toast(category==='Alimento perecedero'?'No podemos registrar alimentos perecederos.':'Solo se permiten devoluciones de tecnología.'); return; }
-  try { const response=await fetch('/api/returns',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({order_number:$('#order').value.trim(),email:$('#email').value.trim(),product:$('#product').value.trim(),category,reason:$('#reason').value})}); const result=await response.json(); if(!response.ok) throw new Error(result.error); e.target.reset(); toast(`Solicitud ${result.code} registrada correctamente.`); await loadRequests(); } catch(error) { toast(error.message || 'No fue posible registrar la solicitud.'); }
-});
-$('#requests-body').addEventListener('change',async e=>{ if(!e.target.matches('.action-select'))return; try { const response=await fetch(`/api/returns/${e.target.dataset.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:e.target.value})}); if(!response.ok) throw new Error(); await loadRequests(); toast('Estado de la solicitud actualizado.'); } catch { toast('No fue posible actualizar el estado.'); } });
-$('#search').addEventListener('input',render);
-$('#seed-data').addEventListener('click',()=>{ loadRequests(); toast('Solicitudes actualizadas desde la base de datos.'); });
-loadRequests();
+function toast(message){const t=$('#toast');t.textContent=message;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000)}
+async function api(path,options={}){const response=await fetch(path,options);const data=await response.json();if(!response.ok)throw new Error(data.error||'Ocurrió un error.');return data}
+async function loadRequests(){if(!employeeToken)return;try{requests=await api('/api/returns',{headers:{Authorization:`Bearer ${employeeToken}`}});render()}catch(error){toast(error.message)}}
+function render(){const filter=$('#search').value.toLowerCase(),rows=requests.filter(r=>(r.order_number+r.product+r.email+r.code).toLowerCase().includes(filter));$('#total-count').textContent=requests.length;$('#pending-count').textContent=requests.filter(r=>r.status==='Pendiente').length;$('#processed-count').textContent=requests.filter(r=>r.status==='Procesada').length;$('#requests-body').innerHTML=rows.map(r=>{const photos=JSON.parse(r.photos||'[]').map(path=>`<a href="/${path}" target="_blank">Ver foto</a>`).join('<br>')||'—';const detail=r.reason==='Otro'&&r.other_reason?`Otro: ${r.other_reason}`:r.reason;return `<tr><td><b class="request-id">${r.code}</b>${r.order_number}<small>${new Date(r.created_at).toLocaleString()}</small></td><td><b>${r.product}</b><small>${r.category}</small></td><td>${r.email}</td><td>${detail}</td><td>${photos}</td><td><span class="status ${r.status}">${r.status}</span></td><td><select class="action-select" data-id="${r.id}"><option ${r.status==='Pendiente'?'selected':''}>Pendiente</option><option ${r.status==='Aprobada'?'selected':''}>Aprobada</option><option ${r.status==='Rechazada'?'selected':''}>Rechazada</option><option ${r.status==='Procesada'?'selected':''}>Procesada</option></select></td></tr>`}).join('');$('#empty-state').hidden=rows.length>0}
+function openLogin(role){loginRole=role;$('#login-title').textContent=role==='employee'?'Acceso de empleados':'Inicia sesión';$('#login-copy').textContent=role==='employee'?'Verifica y procesa solicitudes de devolución.':'Accede para consultar tus últimas compras.';$('#demo-access').textContent=role==='employee'?'Demo: empleado@mercadoviva.com / Empleado2026!':'Demo: camila@email.com / Cliente2026!';$('#login-form').reset();$('#login-dialog').showModal()}
+async function loadPurchases(){purchases=await api('/api/purchases',{headers:{Authorization:`Bearer ${customerToken}`}});$('#recent-products').innerHTML=purchases.map(p=>`<option value="${p.product}">${p.product} — ${p.order_number}</option>`).join('');$('#purchases-help').textContent='Compras recientes disponibles: selecciona un producto para completar su orden automáticamente.'}
+document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',()=>{if(button.dataset.view==='employee'&&!employeeToken){openLogin('employee');return}document.querySelectorAll('[data-view],.view').forEach(el=>el.classList.remove('active'));button.classList.add('active');$('#'+button.dataset.view).classList.add('active');if(button.dataset.view==='employee')loadRequests()}));
+$('#customer-login').addEventListener('click',()=>openLogin('customer'));$('#close-login').addEventListener('click',()=>$('#login-dialog').close());
+$('#login-form').addEventListener('submit',async event=>{event.preventDefault();try{const result=await api('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:$('#login-user').value,password:$('#login-password').value,role:loginRole})});$('#login-dialog').close();if(loginRole==='customer'){customerToken=result.token;$('#email').value=result.email;$('#email').readOnly=true;$('#customer-login').textContent='Sesión: '+result.name;await loadPurchases();toast('Compras recientes cargadas.')}else{employeeToken=result.token;document.querySelector('[data-view="employee"]').click();toast('Sesión de empleado iniciada.')}}catch(error){toast(error.message)}});
+$('#product').addEventListener('input',event=>{const purchase=purchases.find(item=>item.product===event.target.value);if(purchase){$('#order').value=purchase.order_number;$('#category').value=purchase.category;$('#category').dispatchEvent(new Event('change'))}});$('#reason').addEventListener('change',event=>{$('#other-reason-wrap').hidden=event.target.value!=='Otro';$('#other-reason').required=event.target.value==='Otro'});
+$('#category').addEventListener('change',e=>{const prohibited=e.target.value==='Alimento perecedero';$('#policy-message').classList.toggle('invalid',prohibited);$('#policy-message').textContent=prohibited?'Este producto no puede devolverse: los alimentos perecederos están excluidos por política de calidad.':'Solo aceptamos devoluciones de artículos tecnológicos. Los alimentos perecederos no son elegibles.'});
+$('#return-form').addEventListener('submit',async e=>{e.preventDefault();const files=[...$('#photos').files];if(files.length>3){toast('Puedes cargar máximo 3 fotos.');return}const form=new FormData();['order','email','product','category','reason'].forEach(id=>form.append(id==='order'?'order_number':id,$('#'+id).value));form.append('other_reason',$('#other-reason').value);files.forEach(file=>form.append('photos',file));try{const result=await api('/api/returns',{method:'POST',headers:customerToken?{Authorization:`Bearer ${customerToken}`}:{},body:form});e.target.reset();toast(`Solicitud ${result.code} registrada correctamente.`)}catch(error){toast(error.message)}});
+$('#requests-body').addEventListener('change',async e=>{if(!e.target.matches('.action-select'))return;try{await api(`/api/returns/${e.target.dataset.id}`,{method:'PATCH',headers:{'Content-Type':'application/json',Authorization:`Bearer ${employeeToken}`},body:JSON.stringify({status:e.target.value})});await loadRequests();toast('Estado actualizado.')}catch(error){toast(error.message)}});$('#search').addEventListener('input',render);$('#seed-data').addEventListener('click',loadRequests);

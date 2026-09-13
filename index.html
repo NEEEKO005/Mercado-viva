@@ -8,6 +8,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css" />
+    <style>
+      textarea{display:block;width:100%;margin-top:7px;padding:12px 13px;border:1px solid #dce2dc;border-radius:3px;font:14px 'DM Sans';resize:vertical;min-height:80px}.optional{font-weight:400;color:#64736d}.login-link{border:0;background:transparent;color:#075c47;font-weight:700;font-size:13px}.login-link:before{content:'◉ ';font-size:10px}dialog{border:0;border-radius:6px;padding:0;box-shadow:0 20px 60px #0004;width:min(410px,calc(100% - 32px))}dialog::backdrop{background:#092a20a8}.login-form{position:relative;padding:32px}.login-form h2{margin:0 0 7px}.login-form>p:not(.eyebrow):not(.demo-access){margin:0 0 22px;color:#64736d;font-size:13px}.login-form label{display:block;margin:14px 0}.close{position:absolute;right:16px;top:11px;border:0;background:none;font-size:26px;color:#607068}.demo-access{font-size:11px;color:#64736d;background:#f3f5f1;padding:9px 10px;line-height:1.5}
+    </style>
   </head>
   <body>
     <header class="topbar">
@@ -16,7 +19,7 @@
         <button class="nav-link active" data-view="customer">Solicitar devolución</button>
         <button class="nav-link" data-view="employee">Portal trabajador</button>
       </nav>
-      <div class="help">¿Necesitas ayuda? <strong>Centro de ayuda</strong></div>
+      <div class="help"><button id="customer-login" class="login-link">Iniciar sesión</button></div>
     </header>
 
     <main>
@@ -40,9 +43,11 @@
             <div class="form-grid">
               <label>Número de orden<input id="order" required placeholder="Ej. MV-104582" /></label>
               <label>Correo electrónico<input id="email" type="email" required placeholder="nombre@correo.com" /></label>
-              <label>Producto a devolver<input id="product" required placeholder="Ej. Audífonos inalámbricos" /></label>
+              <label>Producto a devolver<input id="product" required list="recent-products" placeholder="Ej. Audífonos inalámbricos" /><datalist id="recent-products"></datalist><small id="purchases-help">Puedes ingresar los datos de tu compra manualmente.</small></label>
               <label>Categoría del producto<select id="category" required><option value="">Selecciona una categoría</option><option value="Tecnología">Tecnología</option><option value="Alimento perecedero">Alimento perecedero</option><option value="Otra">Otra categoría</option></select></label>
               <label class="wide">Motivo de la devolución<select id="reason" required><option value="">Selecciona un motivo</option><option>Producto defectuoso</option><option>Recibí un producto equivocado</option><option>No cumple mis expectativas</option><option>Otro</option></select></label>
+              <label id="other-reason-wrap" class="wide" hidden>Cuéntanos el otro motivo<textarea id="other-reason" placeholder="Describe el motivo de tu devolución" maxlength="500"></textarea></label>
+              <label class="wide">Fotos del producto <span class="optional">(opcional, máximo 3)</span><input id="photos" type="file" accept="image/*" multiple /></label>
             </div>
             <div id="policy-message" class="policy-note">Solo aceptamos devoluciones de artículos tecnológicos. Los alimentos perecederos no son elegibles.</div>
             <button class="primary" type="submit">Continuar con mi solicitud <span>→</span></button>
@@ -58,10 +63,11 @@
       <section id="employee" class="view">
         <div class="section-heading employee-title"><div><p class="eyebrow">EQUIPO MERCADO VIVA</p><h2>Gestión de devoluciones</h2><p>Consulta, verifica y actualiza las solicitudes de los clientes.</p></div><button id="seed-data" class="secondary">Actualizar solicitudes</button></div>
         <div class="metrics"><article><span>Solicitudes</span><strong id="total-count">0</strong></article><article><span>Pendientes de revisión</span><strong id="pending-count">0</strong></article><article><span>Procesadas</span><strong id="processed-count">0</strong></article></div>
-        <div class="card table-card"><div class="table-top"><div><h3>Bandeja de solicitudes</h3><p>Actualiza la decisión y el estado de cada devolución.</p></div><input id="search" placeholder="Buscar orden o producto" /></div><div class="table-wrap"><table><thead><tr><th>Solicitud</th><th>Producto</th><th>Cliente</th><th>Motivo</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="requests-body"></tbody></table></div><p id="empty-state" class="empty">Aún no hay solicitudes registradas.</p></div>
+        <div class="card table-card"><div class="table-top"><div><h3>Tabla SQLite: solicitudes registradas</h3><p>Datos guardados en la tabla <code>return_requests</code>.</p></div><input id="search" placeholder="Buscar orden o producto" /></div><div class="table-wrap"><table><thead><tr><th>Solicitud / fecha</th><th>Producto</th><th>Cliente</th><th>Motivo</th><th>Fotos</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="requests-body"></tbody></table></div><p id="empty-state" class="empty">Aún no hay solicitudes registradas.</p></div>
       </section>
     </main>
     <div id="toast" role="status" aria-live="polite"></div>
+    <dialog id="login-dialog"><form id="login-form" class="login-form"><button type="button" class="close" id="close-login" aria-label="Cerrar">×</button><p class="eyebrow">ACCESO SEGURO</p><h2 id="login-title">Inicia sesión</h2><p id="login-copy">Accede para consultar tus compras recientes.</p><label>Usuario o correo<input id="login-user" required autocomplete="username" placeholder="correo@ejemplo.com" /></label><label>Contraseña<input id="login-password" type="password" required autocomplete="current-password" placeholder="••••••••" /></label><p class="demo-access" id="demo-access"></p><button class="primary" type="submit">Ingresar <span>→</span></button></form></dialog>
     <script src="app.js"></script>
   </body>
 </html>
